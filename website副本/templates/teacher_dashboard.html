@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Teacher Dashboard</title>
+    <style>
+        /* Date picker modal styles */
+        .time-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .time-modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            width: 350px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .time-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .time-modal-header h3 {
+            margin: 0;
+        }
+        
+        .close-modal {
+            cursor: pointer;
+            font-size: 22px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <nav class="nav">
+            <div class="nav-logo">
+                <p>Teacher: {{ username }}</p>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <ul>
+                    <li><a href="#" class="link active" onclick="switchTab('schedule'); return false;">Availability</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('courses'); return false;">My Classes</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('students'); return false;">Students</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('assignments'); return false;">Assignments</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('profile'); return false;">Profile</a></li>
+                </ul>
+            </div>
+            <div class="nav-button">
+                <a href="{{ url_for('logout') }}" class="btn white-btn">Logout</a>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+            <div id="schedule" class="content-section active">
+                <h2>My Availability</h2>
+                <div class="calendar-controls">
+                    <button onclick="changeMonth(-1)">Previous</button>
+                    <span id="current-month-year"></span>
+                    <button onclick="changeMonth(1)">Next</button>
+                </div>
+                <div id="calendar" class="calendar-grid">
+                    <!-- Calendar will be generated here -->
+                </div>
+            </div>
+
+            <!-- Time input modal -->
+            <div id="timeModal" class="time-modal">
+                <div class="time-modal-content">
+                    <div class="time-modal-header">
+                        <h3><span id="selectedDate"></span></h3>
+                        <span class="close-modal" onclick="closeTimeModal()">&times;</span>
+                    </div>
+                    <div class="free-time-section">
+                        <h4>Free Time</h4>
+                        <div id="freeTimeList">
+                            <!-- Free time slots will be listed here -->
+                        </div>
+                        <div class="add-free-time">
+                            <button class="add-time-btn" onclick="showAddTimeForm()">+</button>
+                        </div>
+                    </div>
+                    <div id="addTimeForm" class="add-time-form" style="display: none;">
+                        <div class="time-form-group">
+                            <label for="startTime">Start Time</label>
+                            <input type="time" id="startTime" required>
+                        </div>
+                        <div class="time-form-group">
+                            <label for="endTime">End Time</label>
+                            <input type="time" id="endTime" required>
+                        </div>
+                        <div class="time-form-actions">
+                            <button type="button" class="btn" onclick="hideAddTimeForm()">Cancel</button>
+                            <button type="button" class="btn" onclick="saveTimeEntry()">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="courses" class="content-section">
+                <h2>My Teaching Classes</h2>
+                <div class="add-class">
+                    <button class="btn" onclick="showAddClassForm()">Add New Class</button>
+                </div>
+                <div class="courses-list">
+                    <div class="course-card teacher-course">
+                        <h3>Mathematics 101</h3>
+                        <p>Students: 32</p>
+                        <p>Schedule: Mon/Wed/Fri 10:00 AM</p>
+                        <p>Room: 101</p>
+                        <div class="course-actions">
+                            <button class="btn">View Class</button>
+                            <button class="btn">Take Attendance</button>
+                        </div>
+                    </div>
+                    <div class="course-card teacher-course">
+                        <h3>Advanced Mathematics</h3>
+                        <p>Students: 18</p>
+                        <p>Schedule: Tue/Thu 11:00 AM</p>
+                        <p>Room: 103</p>
+                        <div class="course-actions">
+                            <button class="btn">View Class</button>
+                            <button class="btn">Take Attendance</button>
+                        </div>
+                    </div>
+                    <div class="course-card teacher-course">
+                        <h3>Calculus I</h3>
+                        <p>Students: 25</p>
+                        <p>Schedule: Mon/Wed 2:00 PM</p>
+                        <p>Room: 105</p>
+                        <div class="course-actions">
+                            <button class="btn">View Class</button>
+                            <button class="btn">Take Attendance</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="students" class="content-section">
+                <h2>My Students</h2>
+                <div class="class-filter">
+                    <label for="class-select">Filter by Class:</label>
+                    <select id="class-select" onchange="filterStudents()">
+                        <option value="all">All Classes</option>
+                        <option value="math101">Mathematics 101</option>
+                        <option value="advmath">Advanced Mathematics</option>
+                        <option value="calc1">Calculus I</option>
+                    </select>
+                </div>
+                <table class="students-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Class</th>
+                            <th>Email</th>
+                            <th>Grade</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ST-1001</td>
+                            <td>John Smith</td>
+                            <td>Mathematics 101</td>
+                            <td>john@example.com</td>
+                            <td>A-</td>
+                            <td><button class="btn small">Contact</button> <button class="btn small">View</button></td>
+                        </tr>
+                        <tr>
+                            <td>ST-1002</td>
+                            <td>Emily Johnson</td>
+                            <td>Mathematics 101</td>
+                            <td>emily@example.com</td>
+                            <td>B+</td>
+                            <td><button class="btn small">Contact</button> <button class="btn small">View</button></td>
+                        </tr>
+                        <tr>
+                            <td>ST-1003</td>
+                            <td>Michael Brown</td>
+                            <td>Advanced Mathematics</td>
+                            <td>michael@example.com</td>
+                            <td>A</td>
+                            <td><button class="btn small">Contact</button> <button class="btn small">View</button></td>
+                        </tr>
+                        <tr>
+                            <td>ST-1004</td>
+                            <td>Jessica Williams</td>
+                            <td>Calculus I</td>
+                            <td>jessica@example.com</td>
+                            <td>A+</td>
+                            <td><button class="btn small">Contact</button> <button class="btn small">View</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="assignments" class="content-section">
+                <h2>Assignments</h2>
+                <div class="add-assignment">
+                    <button class="btn" onclick="showAddAssignmentForm()">Create New Assignment</button>
+                </div>
+                <div class="assignments-list">
+                    <div class="assignment-item teacher-assignment">
+                        <div class="assignment-details">
+                            <h3>Problem Set #3</h3>
+                            <p>Class: Mathematics 101</p>
+                            <p>Due: Oct 25, 2023</p>
+                            <p>Submitted: 18/32 students</p>
+                        </div>
+                        <div class="assignment-actions">
+                            <button class="btn">View Submissions</button>
+                            <button class="btn">Edit</button>
+                        </div>
+                    </div>
+                    <div class="assignment-item teacher-assignment">
+                        <div class="assignment-details">
+                            <h3>Midterm Exam</h3>
+                            <p>Class: Advanced Mathematics</p>
+                            <p>Due: Nov 5, 2023</p>
+                            <p>Submitted: 0/18 students</p>
+                        </div>
+                        <div class="assignment-actions">
+                            <button class="btn">View Submissions</button>
+                            <button class="btn">Edit</button>
+                        </div>
+                    </div>
+                    <div class="assignment-item teacher-assignment">
+                        <div class="assignment-details">
+                            <h3>Integration Quiz</h3>
+                            <p>Class: Calculus I</p>
+                            <p>Due: Oct 30, 2023</p>
+                            <p>Submitted: 10/25 students</p>
+                        </div>
+                        <div class="assignment-actions">
+                            <button class="btn">View Submissions</button>
+                            <button class="btn">Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="profile" class="content-section">
+                <h2>My Profile</h2>
+                <div class="profile-info">
+                    <div class="profile-section">
+                        <h3>Personal Information</h3>
+                        <p><strong>Name:</strong> {{ username }}</p>
+                        <p><strong>Email:</strong> teacher@example.com</p>
+                        <p><strong>ID:</strong> TC-{{ session.get('user_id', '0000') }}</p>
+                        <p><strong>Role:</strong> Teacher</p>
+                    </div>
+                    <div class="profile-section">
+                        <h3>Professional Information</h3>
+                        <p><strong>Department:</strong> Mathematics</p>
+                        <p><strong>Office:</strong> Room 305, Science Building</p>
+                        <p><strong>Office Hours:</strong> Mon-Thu 3:00-4:00 PM</p>
+                    </div>
+                </div>
+                <button class="btn">Edit Profile</button>
+            </div>
+            
+            <div id="footer" style="text-align: center; padding: 30px; margin-top: 50px; color: #999;">
+                <p>© 2023 Teacher Dashboard | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active class from all links
+            document.querySelectorAll('.nav-menu .link').forEach(link => link.classList.remove('active'));
+            
+            // Remove active class from all content sections
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+            
+            // Add active class to the clicked tab
+            const clickedTab = document.querySelector(`[onclick*="switchTab('${tabName}')"]`);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            
+            // Show the corresponding content section
+            const contentSection = document.getElementById(tabName);
+            if (contentSection) {
+                contentSection.classList.add('active');
+            }
+        }
+
+        // User events added via the modal
+        let userEvents = [];
+
+        // Modal functionality
+        let selectedDateStr = '';
+
+        function openTimeModal(dateStr, day) {
+            selectedDateStr = dateStr;
+            document.getElementById('selectedDate').textContent = formatDisplayDate(dateStr);
+            document.getElementById('timeModal').style.display = 'flex';
+            document.getElementById('addTimeForm').style.display = 'none';
+            
+            // Load and display existing free time slots for this date
+            displayFreeTimeSlots();
+        }
+
+        function closeTimeModal() {
+            document.getElementById('timeModal').style.display = 'none';
+        }
+
+        function showAddTimeForm() {
+            document.getElementById('addTimeForm').style.display = 'block';
+        }
+
+        function hideAddTimeForm() {
+            document.getElementById('addTimeForm').style.display = 'none';
+        }
+
+        function formatDisplayDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        function displayFreeTimeSlots() {
+            const freeTimeList = document.getElementById('freeTimeList');
+            freeTimeList.innerHTML = '';
+            
+            // Filter events for the selected date that are free time slots
+            const freeTimeSlots = userEvents.filter(event => 
+                event.date === selectedDateStr && event.type === 'free-time'
+            );
+            
+            if (freeTimeSlots.length === 0) {
+                freeTimeList.innerHTML = '<p>No free time slots available for this date.</p>';
+                return;
+            }
+            
+            // Sort by time
+            freeTimeSlots.sort((a, b) => a.time.localeCompare(b.time));
+            
+            // Create elements for each free time slot
+            freeTimeSlots.forEach((slot, index) => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'free-time-slot';
+                
+                slotElement.innerHTML = `
+                    <span class="time-display">${slot.time} - ${slot.endTime}</span>
+                    <span class="remove-slot" onclick="removeTimeSlot(${index})">&times;</span>
+                `;
+                
+                freeTimeList.appendChild(slotElement);
+            });
+        }
+
+        function removeTimeSlot(index) {
+            // Find the actual index in the userEvents array
+            const freeTimeSlots = userEvents.filter(event => 
+                event.date === selectedDateStr && event.type === 'free-time'
+            );
+            
+            if (index >= 0 && index < freeTimeSlots.length) {
+                const slotToRemove = freeTimeSlots[index];
+                const actualIndex = userEvents.findIndex(event => 
+                    event.date === slotToRemove.date && 
+                    event.time === slotToRemove.time && 
+                    event.type === 'free-time'
+                );
+                
+                if (actualIndex !== -1) {
+                    userEvents.splice(actualIndex, 1);
+                    displayFreeTimeSlots();
+                    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                    saveAvailabilityToServer(); // Save changes to the server
+                }
+            }
+        }
+
+        function saveTimeEntry() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if(!startTime || !endTime) {
+                alert('Please select both start and end time');
+                return;
+            }
+            
+            // Validate that end time is after start time
+            if (endTime <= startTime) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            const newEvent = {
+                date: selectedDateStr,
+                time: startTime,
+                endTime: endTime,
+                course: 'Free Time',
+                room: 'Available',
+                type: 'free-time'
+            };
+            
+            userEvents.push(newEvent);
+            
+            // Refresh free time slots display
+            displayFreeTimeSlots();
+            
+            // Refresh calendar to show the new event
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            
+            // Save changes to the server
+            saveAvailabilityToServer();
+            
+            // Reset and hide the form
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+            hideAddTimeForm();
+        }
+
+        // Function to save availability to the server
+        function saveAvailabilityToServer() {
+            // Only include the free time slots
+            const freeTimeSlots = userEvents.filter(event => event.type === 'free-time');
+            
+            fetch('/api/save-availability', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    availability: freeTimeSlots
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error saving availability:', data.error);
+                    alert('Error saving availability: ' + data.error);
+                } else {
+                    console.log('Availability saved successfully:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving availability:', error);
+                alert('Error saving availability. Please try again.');
+            });
+        }
+
+        // Load availability from the server
+        function loadAvailabilityFromServer() {
+            const username = '{{ username }}';
+            
+            fetch(`/api/teacher-availability/${username}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error loading availability:', data.error);
+                        return;
+                    }
+                    
+                    // Clear existing user events and add from server
+                    userEvents = [];
+                    
+                    data.availability.forEach(slot => {
+                        userEvents.push({
+                            date: slot.date,
+                            time: slot.time,
+                            endTime: slot.endTime,
+                            course: 'Free Time',
+                            room: 'Available',
+                            type: 'free-time'
+                        });
+                    });
+                    
+                    // Update calendar with the loaded events
+                    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                })
+                .catch(error => {
+                    console.error('Error loading availability:', error);
+                });
+        }
+
+        // Show add class form
+        function showAddClassForm() {
+            alert("Add new class form would appear here");
+        }
+
+        // Show add assignment form
+        function showAddAssignmentForm() {
+            alert("Create new assignment form would appear here");
+        }
+
+        // Filter students
+        function filterStudents() {
+            alert("This would filter the student list based on class selection");
+        }
+
+        // Calendar data
+        let currentDate = new Date();
+        let scheduleData = [
+            // Example schedule data
+            { date: '2023-10-15', time: '10:00', course: 'Mathematics 101', room: 'Room 101' },
+            { date: '2023-10-16', time: '11:00', course: 'Advanced Mathematics', room: 'Room 103' },
+            { date: '2023-10-16', time: '14:00', course: 'Calculus I', room: 'Room 105' }
+        ];
+
+        function generateCalendar(year, month) {
+            const calendar = document.getElementById('calendar');
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+
+            // Update month/year display
+            document.getElementById('current-month-year').textContent = 
+                firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            // Clear existing calendar
+            calendar.innerHTML = '';
+
+            // Add day headers
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day-header';
+                dayHeader.textContent = day;
+                calendar.appendChild(dayHeader);
+            });
+
+            // Add empty days for the start of the month
+            for (let i = 0; i < startingDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                calendar.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                
+                // Make the day number clickable
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day-header clickable';
+                dayHeader.textContent = day;
+                
+                // Create the date string in YYYY-MM-DD format
+                const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Add click event to the day
+                dayHeader.addEventListener('click', () => openTimeModal(currentDateStr, day));
+                
+                dayDiv.appendChild(dayHeader);
+
+                // Add schedule events - both predefined and user-added
+                const allEvents = [...scheduleData, ...userEvents].filter(event => event.date === currentDateStr);
+
+                allEvents.forEach(event => {
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'calendar-event';
+                    
+                    if (event.type === 'free-time') {
+                        eventDiv.innerHTML = `
+                            <div class="calendar-event-time">${event.time} - ${event.endTime}</div>
+                            <div class="calendar-event-course">${event.course}</div>
+                            <div class="calendar-event-room">${event.room}</div>
+                        `;
+                    } else {
+                        eventDiv.innerHTML = `
+                            <div class="calendar-event-time">${event.time}</div>
+                            <div class="calendar-event-course">${event.course}</div>
+                            <div class="calendar-event-room">${event.room}</div>
+                        `;
+                    }
+                    
+                    dayDiv.appendChild(eventDiv);
+                });
+
+                calendar.appendChild(dayDiv);
+            }
+        }
+
+        function changeMonth(offset) {
+            currentDate.setMonth(currentDate.getMonth() + offset);
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        }
+
+        // Initialize calendar
+        document.addEventListener('DOMContentLoaded', () => {
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            
+            // Load availability from server when page loads
+            loadAvailabilityFromServer();
+            
+            // Close modal if clicked outside the content
+            window.onclick = function(event) {
+                const modal = document.getElementById('timeModal');
+                if (event.target === modal) {
+                    closeTimeModal();
+                }
+            };
+        });
+    </script>
+</body>
+</html> 

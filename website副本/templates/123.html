@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=range(0, 9999999)|random) }}">
+    <title>Login & Registration</title>
+    <style>
+        .error {
+            color: #ff3333;
+            background-color: #ffe6e6;
+            padding: 8px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+ <div class="wrapper">
+    <nav class="nav">
+        <div class="nav-logo">
+            <p>LOGO .</p>
+        </div>
+        <div class="nav-menu" id="navMenu">
+            <ul>
+                <li><a href="#" class="link active">Home</a></li>
+                <li><a href="#" class="link">Blog</a></li>
+                <li><a href="#" class="link">Services</a></li>
+                <li><a href="#" class="link">About</a></li>
+            </ul>
+        </div>
+        <div class="nav-button">
+            <button class="btn white-btn" id="loginBtn" onclick="switchToLogin()">Sign In Now</button>
+            <button class="btn" id="registerBtn" onclick="register()">Sign Up</button>
+        </div>
+        <div class="nav-menu-btn">
+            <i class="bx bx-menu" onclick="myMenuFunction()"></i>
+        </div>
+    </nav>
+
+<!----------------------------- Form box ----------------------------------->    
+    <div class="form-box">
+        
+        <!------------------- login form -------------------------->
+
+        <div class="login-container" id="login">
+            <div class="top">
+                <span>Don't have an account? <a href="#" onclick="register()">Sign Up</a></span>
+                <header>Login</header>
+            </div>
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="input-box">
+                    <input type="text" class="input-field" name="username" placeholder="Username or Email" required>
+                    <i class="bx bx-user"></i>
+                </div>
+                <div class="input-box">
+                    <input type="password" class="input-field" name="password" placeholder="Password" required>
+                    <i class="bx bx-lock-alt"></i>
+                </div>
+                <div class="input-box">
+                    <input type="submit" class="submit" value="Sign In">
+                </div>
+            </form>
+            <div class="two-col">
+                <div class="one">
+                    <input type="checkbox" id="login-check">
+                    <label for="login-check"> Remember Me</label>
+                </div>
+                <div class="two">
+                    <label><a href="#">Forgot password?</a></label>
+                </div>
+            </div>
+        </div>
+
+        <!------------------- registration form -------------------------->
+        <div class="register-container" id="register">
+            <div class="top">
+                <span>Have an account? <a href="#" onclick="login()">Login</a></span>
+                <header>Sign Up</header>
+            </div>
+            {% if reg_error %}
+                <div class="error">{{ reg_error }}</div>
+            {% endif %}
+            <form action="{{ url_for('register') }}" method="POST">
+                <div class="two-forms">
+                    <div class="input-box">
+                        <input type="text" class="input-field" name="firstname" placeholder="Firstname" required>
+                        <i class="bx bx-user"></i>
+                    </div>
+                    <div class="input-box">
+                        <input type="text" class="input-field" name="lastname" placeholder="Lastname" required>
+                        <i class="bx bx-user"></i>
+                    </div>
+                </div>
+                <div class="input-box">
+                    <input type="email" class="input-field" name="email" placeholder="Email" required>
+                    <i class="bx bx-envelope"></i>
+                </div>
+                <div class="input-box city-container">
+                    <input type="text" class="input-field" id="city" name="city" placeholder="City" required>
+                    <i class="bx bx-building"></i>
+                    <div id="citySuggestions" class="suggestions-container"></div>
+                </div>
+                <div class="input-box">
+                    <input type="text" class="input-field" name="username" placeholder="Username" required>
+                    <i class="bx bx-user"></i>
+                </div>
+                <div class="input-box">
+                    <input type="password" class="input-field" name="password" placeholder="Password" required>
+                    <i class="bx bx-lock-alt"></i>
+                </div>
+                <div class="role-selection">
+                    <p>I am a:</p>
+                    <div class="role-buttons">
+                        <label>
+                            <input type="radio" name="role" value="student" checked>
+                            <span class="role-btn">Student</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="role" value="teacher">
+                            <span class="role-btn">Teacher</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="input-box">
+                    <input type="submit" class="submit" value="Register">
+                </div>
+            </form>
+            <div class="two-col">
+                <div class="one">
+                    <input type="checkbox" id="register-check">
+                    <label for="register-check"> Remember Me</label>
+                </div>
+                <div class="two">
+                    <label><a href="#">Terms & conditions</a></label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>   
+
+<script>
+    function myMenuFunction() {
+        var i = document.getElementById("navMenu");
+
+        if(i.className === "nav-menu") {
+            i.className += " responsive";
+        } else {
+            i.className = "nav-menu";
+        }
+    }
+
+    var a = document.getElementById("loginBtn");
+    var b = document.getElementById("registerBtn");
+    var x = document.getElementById("login");
+    var y = document.getElementById("register");
+
+    function switchToLogin() {
+        x.style.left = "4px";
+        y.style.right = "-520px";
+        a.className += " white-btn";
+        b.className = "btn";
+        x.style.opacity = 1;
+        y.style.opacity = 0;
+    }
+
+    function register() {
+        x.style.left = "-510px";
+        y.style.right = "5px";
+        a.className = "btn";
+        b.className += " white-btn";
+        x.style.opacity = 0;
+        y.style.opacity = 1;
+    }
+    
+    // City autocomplete functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const cityInput = document.getElementById('city');
+        const suggestionContainer = document.getElementById('citySuggestions');
+        
+        // List of major cities with their timezones
+        const cities = [
+            { name: "New York", timezone: "America/New_York" },
+            { name: "Los Angeles", timezone: "America/Los_Angeles" },
+            { name: "Chicago", timezone: "America/Chicago" },
+            { name: "Houston", timezone: "America/Chicago" },
+            { name: "Phoenix", timezone: "America/Phoenix" },
+            { name: "Philadelphia", timezone: "America/New_York" },
+            { name: "San Antonio", timezone: "America/Chicago" },
+            { name: "San Diego", timezone: "America/Los_Angeles" },
+            { name: "Dallas", timezone: "America/Chicago" },
+            { name: "San Jose", timezone: "America/Los_Angeles" },
+            { name: "London", timezone: "Europe/London" },
+            { name: "Paris", timezone: "Europe/Paris" },
+            { name: "Berlin", timezone: "Europe/Berlin" },
+            { name: "Rome", timezone: "Europe/Rome" },
+            { name: "Madrid", timezone: "Europe/Madrid" },
+            { name: "Toronto", timezone: "America/Toronto" },
+            { name: "Sydney", timezone: "Australia/Sydney" },
+            { name: "Tokyo", timezone: "Asia/Tokyo" },
+            { name: "Beijing", timezone: "Asia/Shanghai" },
+            { name: "Hong Kong", timezone: "Asia/Hong_Kong" },
+            { name: "Singapore", timezone: "Asia/Singapore" },
+            { name: "Dubai", timezone: "Asia/Dubai" },
+            { name: "Mumbai", timezone: "Asia/Kolkata" },
+            { name: "Istanbul", timezone: "Europe/Istanbul" },
+            { name: "Seoul", timezone: "Asia/Seoul" }
+        ];
+        
+        // Add input event listener
+        cityInput.addEventListener('input', function() {
+            const inputValue = this.value.trim().toLowerCase();
+            
+            // Clear previous suggestions
+            suggestionContainer.innerHTML = '';
+            
+            if (inputValue.length < 2) return;
+            
+            // Filter cities based on input
+            const matches = cities.filter(city => 
+                city.name.toLowerCase().startsWith(inputValue)
+            );
+            
+            // Display suggestions
+            if (matches.length > 0) {
+                suggestionContainer.style.display = 'block';
+                matches.slice(0, 5).forEach(city => {
+                    const suggestion = document.createElement('div');
+                    suggestion.className = 'city-suggestion';
+                    suggestion.textContent = city.name;
+                    suggestion.dataset.timezone = city.timezone;
+                    
+                    suggestion.addEventListener('click', function() {
+                        cityInput.value = city.name;
+                        // Add hidden field for timezone
+                        let timezoneInput = document.getElementById('timezone');
+                        if (!timezoneInput) {
+                            timezoneInput = document.createElement('input');
+                            timezoneInput.type = 'hidden';
+                            timezoneInput.id = 'timezone';
+                            timezoneInput.name = 'timezone';
+                            cityInput.parentNode.appendChild(timezoneInput);
+                        }
+                        timezoneInput.value = city.timezone;
+                        suggestionContainer.style.display = 'none';
+                    });
+                    
+                    suggestionContainer.appendChild(suggestion);
+                });
+            } else {
+                suggestionContainer.style.display = 'none';
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== cityInput && e.target !== suggestionContainer) {
+                suggestionContainer.style.display = 'none';
+            }
+        });
+    });
+</script>
+</body>
+</html>

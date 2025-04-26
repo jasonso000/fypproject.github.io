@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Student Dashboard</title>
+    <style>
+        /* Date picker modal styles */
+        .time-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .time-modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            width: 350px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .time-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .time-modal-header h3 {
+            margin: 0;
+        }
+        
+        .close-modal {
+            cursor: pointer;
+            font-size: 22px;
+        }
+        
+        .time-form-group {
+            margin-bottom: 15px;
+        }
+        
+        .time-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .time-form-group input, 
+        .time-form-group select,
+        .time-form-group textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .time-form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .time-form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <nav class="nav">
+            <div class="nav-logo">
+                <p>Student: {{ username }}</p>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <ul>
+                    <li><a href="#" class="link active" onclick="switchTab('schedule'); return false;">Availability</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('courses'); return false;">My Courses</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('assignments'); return false;">Assignments</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('grades'); return false;">Grades</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('profile'); return false;">Profile</a></li>
+                </ul>
+            </div>
+            <div class="nav-button">
+                <a href="{{ url_for('logout') }}" class="btn white-btn">Logout</a>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+            <div id="schedule" class="content-section active">
+                <h2>Teacher Availability</h2>
+                <div class="teacher-search">
+                    <input type="text" id="teacherSearchInput" placeholder="Search teacher by username..." class="teacher-search-input">
+                    <button onclick="searchTeacher()" class="btn">Search</button>
+                </div>
+                <div class="calendar-controls">
+                    <button onclick="changeMonth(-1)">Previous</button>
+                    <span id="current-month-year"></span>
+                    <button onclick="changeMonth(1)">Next</button>
+                </div>
+                <div id="teacherInfo" class="teacher-info" style="display: none;">
+                    <h3>Viewing availability for: <span id="currentTeacher"></span></h3>
+                </div>
+                <div id="calendar" class="calendar-grid">
+                    <!-- Calendar will be generated here -->
+                </div>
+            </div>
+
+            <!-- Time view modal -->
+            <div id="timeModal" class="time-modal">
+                <div class="time-modal-content">
+                    <div class="time-modal-header">
+                        <h3><span id="selectedDate"></span></h3>
+                        <span class="close-modal" onclick="closeTimeModal()">&times;</span>
+                    </div>
+                    <div class="free-time-section">
+                        <h4>Teacher's Free Time Slots</h4>
+                        <div id="freeTimeList">
+                            <!-- Free time slots will be listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="courses" class="content-section">
+                <h2>My Enrolled Courses</h2>
+                <div class="courses-list">
+                    <div class="course-card">
+                        <h3>Mathematics 101</h3>
+                        <p>Instructor: Prof. Smith</p>
+                        <p>Schedule: Mon/Wed/Fri 10:00 AM</p>
+                        <button class="btn">View Course</button>
+                    </div>
+                    <div class="course-card">
+                        <h3>Introduction to Programming</h3>
+                        <p>Instructor: Dr. Johnson</p>
+                        <p>Schedule: Tue/Thu 2:00 PM</p>
+                        <button class="btn">View Course</button>
+                    </div>
+                    <div class="course-card">
+                        <h3>World History</h3>
+                        <p>Instructor: Prof. Williams</p>
+                        <p>Schedule: Mon/Wed 1:00 PM</p>
+                        <button class="btn">View Course</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="assignments" class="content-section">
+                <h2>Assignments</h2>
+                <div class="assignments-list">
+                    <div class="assignment-item">
+                        <div class="assignment-details">
+                            <h3>Math Problem Set #3</h3>
+                            <p>Course: Mathematics 101</p>
+                            <p>Due: Oct 25, 2023</p>
+                        </div>
+                        <div class="assignment-status">
+                            <span class="status-badge pending">Pending</span>
+                            <button class="btn">Submit</button>
+                        </div>
+                    </div>
+                    <div class="assignment-item">
+                        <div class="assignment-details">
+                            <h3>Programming Project</h3>
+                            <p>Course: Introduction to Programming</p>
+                            <p>Due: Nov 5, 2023</p>
+                        </div>
+                        <div class="assignment-status">
+                            <span class="status-badge pending">Pending</span>
+                            <button class="btn">Submit</button>
+                        </div>
+                    </div>
+                    <div class="assignment-item">
+                        <div class="assignment-details">
+                            <h3>History Essay</h3>
+                            <p>Course: World History</p>
+                            <p>Due: Oct 30, 2023</p>
+                        </div>
+                        <div class="assignment-status">
+                            <span class="status-badge pending">Pending</span>
+                            <button class="btn">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="grades" class="content-section">
+                <h2>My Grades</h2>
+                <table class="grades-table">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Assignment</th>
+                            <th>Grade</th>
+                            <th>Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mathematics 101</td>
+                            <td>Problem Set #1</td>
+                            <td>92%</td>
+                            <td>Excellent work!</td>
+                        </tr>
+                        <tr>
+                            <td>Mathematics 101</td>
+                            <td>Problem Set #2</td>
+                            <td>88%</td>
+                            <td>Good effort</td>
+                        </tr>
+                        <tr>
+                            <td>Introduction to Programming</td>
+                            <td>Quiz #1</td>
+                            <td>95%</td>
+                            <td>Perfect understanding of concepts</td>
+                        </tr>
+                        <tr>
+                            <td>World History</td>
+                            <td>Midterm Exam</td>
+                            <td>85%</td>
+                            <td>Need more focus on dates</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="profile" class="content-section">
+                <h2>My Profile</h2>
+                <div class="profile-info">
+                    <div class="profile-section">
+                        <h3>Personal Information</h3>
+                        <p><strong>Name:</strong> {{ username }}</p>
+                        <p><strong>Email:</strong> student@example.com</p>
+                        <p><strong>ID:</strong> ST-{{ session.get('user_id', '0000') }}</p>
+                        <p><strong>Role:</strong> Student</p>
+                    </div>
+                    <div class="profile-section">
+                        <h3>Academic Information</h3>
+                        <p><strong>Major:</strong> Computer Science</p>
+                        <p><strong>Year:</strong> Sophomore</p>
+                        <p><strong>GPA:</strong> 3.75</p>
+                    </div>
+                </div>
+                <button class="btn">Edit Profile</button>
+            </div>
+            
+            <div id="footer" style="text-align: center; padding: 30px; margin-top: 50px; color: #999;">
+                <p>© 2023 Student Dashboard | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active class from all links
+            document.querySelectorAll('.nav-menu .link').forEach(link => link.classList.remove('active'));
+            
+            // Remove active class from all content sections
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+            
+            // Add active class to the clicked tab
+            const clickedTab = document.querySelector(`[onclick*="switchTab('${tabName}')"]`);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            
+            // Show the corresponding content section
+            const contentSection = document.getElementById(tabName);
+            if (contentSection) {
+                contentSection.classList.add('active');
+            }
+        }
+
+        // Calendar data
+        let currentDate = new Date();
+        let scheduleData = [
+            // Example schedule data
+            { date: '2023-10-15', time: '10:00', course: 'Mathematics 101', room: 'Room 101' },
+            { date: '2023-10-15', time: '14:00', course: 'Programming', room: 'Lab 3' },
+            { date: '2023-10-16', time: '13:00', course: 'World History', room: 'Room 205' }
+        ];
+        
+        // Currently viewed teacher data
+        let currentTeacher = null;
+        let currentTeacherAvailability = [];
+
+        // Modal functionality for viewing availability
+        let selectedDateStr = '';
+
+        function searchTeacher() {
+            const teacherUsername = document.getElementById('teacherSearchInput').value.trim().toLowerCase();
+            
+            if (!teacherUsername) {
+                alert('Please enter a teacher username');
+                return;
+            }
+            
+            // Fetch teacher availability from the API
+            fetch(`/api/teacher-availability/${teacherUsername}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    currentTeacher = teacherUsername;
+                    currentTeacherAvailability = data.availability;
+                    
+                    // Show teacher info
+                    document.getElementById('currentTeacher').textContent = teacherUsername;
+                    document.getElementById('teacherInfo').style.display = 'block';
+                    
+                    // Update calendar with teacher's availability
+                    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                })
+                .catch(error => {
+                    console.error('Error fetching teacher availability:', error);
+                    alert('An error occurred while fetching teacher data. Please try again.');
+                });
+        }
+
+        function openTimeModal(dateStr, day) {
+            if (!currentTeacher) {
+                alert('Please search for a teacher first');
+                return;
+            }
+            
+            selectedDateStr = dateStr;
+            document.getElementById('selectedDate').textContent = formatDisplayDate(dateStr);
+            document.getElementById('timeModal').style.display = 'flex';
+            
+            // Display teacher's availability for this date
+            displayTeacherFreeTimeSlots();
+        }
+
+        function closeTimeModal() {
+            document.getElementById('timeModal').style.display = 'none';
+        }
+
+        function formatDisplayDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        function displayTeacherFreeTimeSlots() {
+            const freeTimeList = document.getElementById('freeTimeList');
+            freeTimeList.innerHTML = '';
+            
+            // Filter events for the selected date that are free time slots
+            const freeTimeSlots = currentTeacherAvailability.filter(event => 
+                event.date === selectedDateStr && event.type === 'free-time'
+            );
+            
+            if (freeTimeSlots.length === 0) {
+                freeTimeList.innerHTML = '<p>No free time slots available on this date.</p>';
+                return;
+            }
+            
+            // Sort by time
+            freeTimeSlots.sort((a, b) => a.time.localeCompare(b.time));
+
+            // Create header for the time slots
+            const headerElement = document.createElement('div');
+            headerElement.className = 'time-slots-header';
+            headerElement.innerHTML = `
+                <h4>Available Time Slots</h4>
+                <p><span class="teacher-time-label">Hong Kong Time (HKT)</span> | 
+                <span class="student-time-label">Barcelona Time (CEST)</span></p>
+            `;
+            freeTimeList.appendChild(headerElement);
+            
+            // Create elements for each free time slot
+            freeTimeSlots.forEach((slot) => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'free-time-slot';
+                
+                // Convert from Hong Kong time to Barcelona time
+                const barcelonaTime = convertTimezone(slot.date, slot.time, 'Asia/Hong_Kong', 'Europe/Madrid');
+                const barcelonaEndTime = convertTimezone(slot.date, slot.endTime, 'Asia/Hong_Kong', 'Europe/Madrid');
+                
+                slotElement.innerHTML = `
+                    <span class="time-display">${slot.time} - ${slot.endTime}</span>
+                    <span class="time-display student-time">${barcelonaTime} - ${barcelonaEndTime}</span>
+                `;
+                
+                freeTimeList.appendChild(slotElement);
+            });
+        }
+
+        // Function to convert time between timezones
+        function convertTimezone(dateStr, timeStr, fromTimezone, toTimezone) {
+            // Create date object in the source timezone
+            const sourceDate = new Date(`${dateStr}T${timeStr}:00`);
+            
+            // Get the time difference between timezones
+            // Hong Kong is UTC+8, Barcelona (Madrid) is UTC+2
+            // So the difference is 6 hours (Barcelona is 6 hours behind Hong Kong)
+            const hoursDifference = -6;
+            
+            // Apply the offset
+            const targetDate = new Date(sourceDate);
+            targetDate.setHours(sourceDate.getHours() + hoursDifference);
+            
+            // Format the time
+            return targetDate.toTimeString().substring(0, 5);
+        }
+
+        function generateCalendar(year, month) {
+            const calendar = document.getElementById('calendar');
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+
+            // Update month/year display
+            document.getElementById('current-month-year').textContent = 
+                firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            // Clear existing calendar
+            calendar.innerHTML = '';
+
+            // Add day headers
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day-header';
+                dayHeader.textContent = day;
+                calendar.appendChild(dayHeader);
+            });
+
+            // Add empty days for the start of the month
+            for (let i = 0; i < startingDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                calendar.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                
+                // Make the day number clickable
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day-header clickable';
+                dayHeader.textContent = day;
+                
+                // Create the date string in YYYY-MM-DD format
+                const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Add click event to the day
+                dayHeader.addEventListener('click', () => openTimeModal(currentDateStr, day));
+                
+                dayDiv.appendChild(dayHeader);
+
+                // Add class schedule events
+                const classEvents = scheduleData.filter(event => event.date === currentDateStr);
+                
+                classEvents.forEach(event => {
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'calendar-event';
+                    eventDiv.innerHTML = `
+                        <div class="calendar-event-time">${event.time}</div>
+                        <div class="calendar-event-course">${event.course}</div>
+                        <div class="calendar-event-room">${event.room}</div>
+                    `;
+                    dayDiv.appendChild(eventDiv);
+                });
+                
+                // Add teacher availability if a teacher is selected
+                if (currentTeacher) {
+                    const teacherEvents = currentTeacherAvailability.filter(event => 
+                        event.date === currentDateStr && event.type === 'free-time'
+                    );
+                    
+                    teacherEvents.forEach(event => {
+                        const eventDiv = document.createElement('div');
+                        eventDiv.className = 'calendar-event teacher-free-time';
+                        
+                        // Convert from Hong Kong time to Barcelona time
+                        const barcelonaTime = convertTimezone(event.date, event.time, 'Asia/Hong_Kong', 'Europe/Madrid');
+                        const barcelonaEndTime = convertTimezone(event.date, event.endTime, 'Asia/Hong_Kong', 'Europe/Madrid');
+                        
+                        eventDiv.innerHTML = `
+                            <div class="calendar-event-time">${event.time} - ${event.endTime} (HKT)</div>
+                            <div class="calendar-event-time student-time">${barcelonaTime} - ${barcelonaEndTime} (CEST)</div>
+                            <div class="calendar-event-course">Teacher Available</div>
+                        `;
+                        dayDiv.appendChild(eventDiv);
+                    });
+                }
+
+                calendar.appendChild(dayDiv);
+            }
+        }
+
+        function changeMonth(offset) {
+            currentDate.setMonth(currentDate.getMonth() + offset);
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        }
+
+        // Initialize calendar
+        document.addEventListener('DOMContentLoaded', () => {
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            
+            // Close modal if clicked outside the content
+            window.onclick = function(event) {
+                const modal = document.getElementById('timeModal');
+                if (event.target === modal) {
+                    closeTimeModal();
+                }
+            };
+            
+            // Add enter key support for search
+            document.getElementById('teacherSearchInput').addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    searchTeacher();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
