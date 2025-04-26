@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Dashboard</title>
+</head>
+<body>
+    <div class="wrapper">
+        <nav class="nav">
+            <div class="nav-logo">
+                <p>Welcome, {{ username }}</p>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <ul>
+                    <li><a href="#" class="link active" onclick="switchTab('schedule'); return false;">Dashboard</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('availability'); return false;">Set Availability</a></li>
+                    <li><a href="#" class="link" onclick="switchTab('notifications'); return false;">Notifications</a></li>
+                    <li><a href="#" class="link">Profile</a></li>
+                    <li><a href="#" class="link">Settings</a></li>
+                </ul>
+            </div>
+            <div class="nav-button">
+                <a href="{{ url_for('logout') }}" class="btn white-btn" style="padding: 10px 25px; font-size: 16px; width: 140px; height: 45px; display: inline-block; line-height: 25px;">Logout</a>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+            <div id="schedule" class="content-section active">
+                <div class="calendar-controls">
+                    <button onclick="changeMonth(-1)">Previous</button>
+                    <span id="current-month-year"></span>
+                    <button onclick="changeMonth(1)">Next</button>
+                </div>
+                <div id="calendar" class="calendar-grid">
+                    <!-- Calendar will be generated here -->
+                </div>
+            </div>
+
+            <div id="availability" class="content-section">
+                <h2>Set Your Availability</h2>
+                <div class="availability-form">
+                    <label for="availability-date">Date:</label>
+                    <input type="date" id="availability-date">
+                    
+                    <label for="start-time">Start Time:</label>
+                    <input type="time" id="start-time">
+                    
+                     <label for="end-time">End Time:</label>
+                    <input type="time" id="end-time">
+                    
+                    <button onclick="addAvailability()">Add Slot</button>
+                </div>
+                <h3>Your Availability Slots</h3>
+                <ul id="availability-slots">
+                    <!-- Availability slots will be populated here -->
+                </ul>
+            </div>
+
+            <div id="notifications" class="content-section">
+                <h2>Notifications</h2>
+                <div id="notifications-list">
+                    <!-- Notifications will appear here -->
+                </div>
+            </div>
+            
+            <!-- New sections to make the dashboard longer -->
+            <div id="activity-summary" class="content-section">
+                <h2>Activity Summary</h2>
+                <div class="summary-stats">
+                    <div class="stat-card">
+                        <h3>Total Sessions</h3>
+                        <p class="stat-number">24</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Hours Logged</h3>
+                        <p class="stat-number">48</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completion Rate</h3>
+                        <p class="stat-number">92%</p>
+                    </div>
+                </div>
+                <div class="activity-chart">
+                    <h3>Monthly Activity</h3>
+                    <div class="chart-placeholder" style="height: 250px; background-color: #f5f5f5; border-radius: 8px; display: flex; justify-content: center; align-items: center;">
+                        Chart Placeholder
+                    </div>
+                </div>
+            </div>
+            
+            <div id="recent-activity" class="content-section">
+                <h2>Recent Activity</h2>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-date">Oct 15, 2023</div>
+                        <div class="activity-description">Session completed with John Doe</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-date">Oct 14, 2023</div>
+                        <div class="activity-description">New availability slot added</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-date">Oct 12, 2023</div>
+                        <div class="activity-description">Profile updated</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-date">Oct 10, 2023</div>
+                        <div class="activity-description">Session rescheduled with Jane Smith</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-date">Oct 8, 2023</div>
+                        <div class="activity-description">Feedback received: 5-star rating</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="footer" style="text-align: center; padding: 30px; margin-top: 50px; color: #999;">
+                <p>© 2023 Dashboard System | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let availabilitySlots = [];
+        let schedule = [];
+        let notifications = [];
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active class from all links
+            document.querySelectorAll('.nav-menu .link').forEach(link => link.classList.remove('active'));
+            
+            // Remove active class from all content sections
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+            
+            // Add active class to the clicked tab
+            const clickedTab = document.querySelector(`[onclick*="switchTab('${tabName}')"]`);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            
+            // Show the corresponding content section
+            const contentSection = document.getElementById(tabName);
+            if (contentSection) {
+                contentSection.classList.add('active');
+            }
+        }
+
+        // Add availability slot
+        function addAvailability() {
+            const date = document.getElementById('availability-date').value;
+            const startTime = document.getElementById('start-time').value;
+            const endTime = document.getElementById('end-time').value;
+
+            if (date && startTime && endTime) {
+                const slot = { date, startTime, endTime };
+                availabilitySlots.push(slot);
+                updateAvailabilityDisplay();
+                addNotification(`New availability slot added: ${date} ${startTime}-${endTime}`);
+            }
+        }
+
+        // Update availability display
+        function updateAvailabilityDisplay() {
+            const slotsList = document.getElementById('availability-slots');
+            slotsList.innerHTML = availabilitySlots.map((slot, index) => `
+                <li>
+                    ${slot.date} ${slot.startTime}-${slot.endTime}
+                    <button onclick="deleteAvailability(${index})">Delete</button>
+                </li>
+            `).join('');
+        }
+
+        // Delete availability slot
+        function deleteAvailability(index) {
+            availabilitySlots.splice(index, 1);
+            updateAvailabilityDisplay();
+            addNotification(`Availability slot deleted`);
+        }
+
+        // Add notification
+        function addNotification(message) {
+            notifications.push(message);
+            updateNotifications();
+        }
+
+        // Update notifications display
+        function updateNotifications() {
+            const notificationsList = document.getElementById('notifications-list');
+            notificationsList.innerHTML = notifications.map(notification => `
+                <div class="notification">${notification}</div>
+            `).join('');
+        }
+
+        // Simulate matching request
+        function simulateMatchingRequest() {
+            addNotification(`New matching request! Click to confirm.`);
+        }
+
+        // Calendar data
+        let currentDate = new Date();
+        let scheduleData = [
+            // Example schedule data
+            { date: '2023-10-15', time: '10:00', student: 'John Doe', status: 'Confirmed' },
+            { date: '2023-10-20', time: '14:00', student: 'Jane Smith', status: 'Pending' }
+        ];
+
+        function generateCalendar(year, month) {
+            const calendar = document.getElementById('calendar');
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+
+            // Update month/year display
+            document.getElementById('current-month-year').textContent = 
+                firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            // Clear existing calendar
+            calendar.innerHTML = '';
+
+            // Add day headers
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day-header';
+                dayHeader.textContent = day;
+                calendar.appendChild(dayHeader);
+            });
+
+            // Add empty days for the start of the month
+            for (let i = 0; i < startingDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                calendar.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.innerHTML = `<div class="calendar-day-header">${day}</div>`;
+
+                // Add schedule events
+                const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayEvents = scheduleData.filter(event => event.date === currentDateStr);
+
+                dayEvents.forEach(event => {
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'calendar-event';
+                    eventDiv.innerHTML = `
+                        <div class="calendar-event-time">${event.time}</div>
+                        <div class="calendar-event-student">${event.student}</div>
+                        <div class="calendar-event-status">${event.status}</div>
+                    `;
+                    dayDiv.appendChild(eventDiv);
+                });
+
+                calendar.appendChild(dayDiv);
+            }
+        }
+
+        function changeMonth(offset) {
+            currentDate.setMonth(currentDate.getMonth() + offset);
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        }
+
+        // Initialize calendar
+        document.addEventListener('DOMContentLoaded', () => {
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            updateAvailabilityDisplay();
+            updateNotifications();
+            // Simulate a matching request after 5 seconds
+            setTimeout(simulateMatchingRequest, 5000);
+        });
+    </script>
+</body>
+</html> 
